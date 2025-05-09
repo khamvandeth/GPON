@@ -133,7 +133,7 @@ async def search_site(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start Search Site mode."""
     await update.message.reply_text(
         "🔍 <b>Search Site Mode</b>\n\n"
-        "Enter your search term (ONT, IP, name, etc.)\n"
+        "Enter your search term (SITE, IP, etc.)\n"
         "Type /Back to return to main menu.",
         parse_mode='HTML'
     )
