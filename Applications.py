@@ -29,7 +29,7 @@ BCCS_API_URL = "http://36.37.242.67:8068/BCCSGatewayWS/BCCSGatewayWS?wsdl"
 EXCLUDED_COLUMNS = {'No', 'BTS Name'}
 
 # Conversation states
-CHOOSING, GPON_SEARCH, BCCS_OPERATION = range(3)
+CHOOSING, Search_Site, Change_Device = range(3)
 
 # ===== Shared Data =====
 excel_data = None
@@ -79,7 +79,7 @@ def format_result(result):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send welcome message and main menu."""
     reply_keyboard = [
-        [KeyboardButton("Gpon Site"), KeyboardButton("Change Site")],
+        [KeyboardButton("Search Site"), KeyboardButton("Change Device")],
         [KeyboardButton("Help")]
     ]
     
@@ -87,8 +87,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ✨ <b>Welcome to Combined Telecom Bot!</b> ✨
 
 Please choose an operation:
-- <b>Gpon Site</b>: Search GPON database
-- <b>Change Site</b>: Change device for account
+- <b>Search Site</b>: Search Site
+- <b>Change Device</b>: Change device for account
 
 You can type /Back at any time to return to this menu.
 """
@@ -108,10 +108,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     help_text = """
 ℹ️ <b>Combined Telecom Bot Help</b> ℹ️
 
-<b>Gpon Site</b>:
-Send any search term to find matching records in GPON database.
+<b>Search Site</b>:
+Send any search term to find matching records in GPON database./Back
 
-<b>Change Site</b>:
+<b>Change Device</b>:
 Send your request in this format:
 <code>account:YOUR_ACCOUNT
 device:YOUR_DEVICE_CODE</code>
@@ -123,24 +123,24 @@ device:PNP111_A_G_C610</code>
     await update.message.reply_text(help_text, parse_mode='HTML')
     return CHOOSING
 
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def Back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Return to main menu."""
     await start(update, context)
     return CHOOSING
 
-# ===== Gpon Site Handlers =====
-async def gpon_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Start Gpon Site mode."""
+# ===== Search Site Handlers =====
+async def search_site(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Start Search Site mode."""
     await update.message.reply_text(
-        "🔍 <b>Gpon Site Mode</b>\n\n"
+        "🔍 <b>Search Site Mode</b>\n\n"
         "Enter your search term (ONT, IP, name, etc.)\n"
         "Type /Back to return to main menu.",
         parse_mode='HTML'
     )
-    return GPON_SEARCH
+    return Search_Site
 
 async def handle_gpon_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle Gpon Site queries."""
+    """Handle Search Site queries."""
     global excel_data
     try:
         if not excel_data:
@@ -148,7 +148,7 @@ async def handle_gpon_search(update: Update, context: ContextTypes.DEFAULT_TYPE)
             excel_data = load_excel_data()
             if not excel_data:
                 await update.message.reply_text('❌ Failed to load data. Please try again later.')
-                return await cancel(update, context)
+                return await Back(update, context)
         
         search_term = update.message.text
         results = search_data(excel_data, search_term)
@@ -162,7 +162,7 @@ async def handle_gpon_search(update: Update, context: ContextTypes.DEFAULT_TYPE)
             else:
                 more_text = ""
                 
-            footer = "\n\nℹ️ Tip: Try a more specific search term for better results."
+            footer = "\n\nℹ️ Tip: Try a more specific search term for better results./Back"
             
             full_message = header + formatted_results + more_text + footer
             await update.message.reply_text(full_message, parse_mode='HTML')
@@ -178,17 +178,17 @@ Suggestions:
             await update.message.reply_text(no_results_text, parse_mode='HTML')
             
     except Exception as error:
-        logger.error(f'Error handling Gpon Site: {error}')
+        logger.error(f'Error handling Search Site: {error}')
         error_text = "⚠️ <b>An error occurred</b>\nWe couldn't process your request. Please try again."
         await update.message.reply_text(error_text, parse_mode='HTML')
     
-    return GPON_SEARCH
+    return Search_Site
 
-# ===== Change Site Handlers =====
-async def bccs_operation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Start Change Site mode."""
+# ===== Change Device Handlers =====
+async def change_device(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Start Change Device mode."""
     await update.message.reply_text(
-        "🔄 <b>Change Site Mode</b>\n\n"
+        "🔄 <b>Change Device Mode</b>\n\n"
         "Send your request in this format:\n"
         "<code>account:YOUR_ACCOUNT\ndevice:YOUR_DEVICE_CODE</code>\n\n"
         "Example:\n"
@@ -196,10 +196,10 @@ async def bccs_operation(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Type /Back to return to main menu.",
         parse_mode='HTML'
     )
-    return BCCS_OPERATION
+    return Change_Device
 
 async def handle_bccs_operation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle Change Site requests."""
+    """Handle Change Device requests."""
     message_text = update.message.text.strip()
     
     try:
@@ -216,7 +216,7 @@ async def handle_bccs_operation(update: Update, context: ContextTypes.DEFAULT_TY
                 "<code>account:98xxxxxxxxx\ndevice:PNP111_A_G_C610</code>",
                 parse_mode='HTML'
             )
-            return BCCS_OPERATION
+            return Change_Device
             
         account = account_match.group(1)
         device_code = device_match.group(1)
@@ -263,20 +263,20 @@ async def handle_bccs_operation(update: Update, context: ContextTypes.DEFAULT_TY
             f"<b>Request Status:</b> {status}\n\n"
             f"🔹 <b>Account:</b> <code>{account}</code>\n"
             f"🔹 <b>Device Code:</b> <code>{device_code}</code>\n\n"
-            "<i>The request has been processed by the API.</i>"
+            "<i>The request has been processed by the API./Back</i>"
         )
         
         await update.message.reply_text(formatted_response, parse_mode='HTML')
         
     except Exception as e:
-        logger.error(f"Error processing Change Site: {e}")
+        logger.error(f"Error processing Change Device: {e}")
         await update.message.reply_text(
             f"❌ <b>Error Processing Request</b> ❌\n\n"
             f"<code>{str(e)}</code>",
             parse_mode='HTML'
         )
     
-    return BCCS_OPERATION
+    return Change_Device
 
 # ===== Main Function =====
 def main():
@@ -288,20 +288,20 @@ def main():
         entry_points=[CommandHandler('start', start)],
         states={
             CHOOSING: [
-                MessageHandler(filters.Regex('^Gpon Site$'), gpon_search),
-                MessageHandler(filters.Regex('^Change Site$'), bccs_operation),
+                MessageHandler(filters.Regex('^Search Site$'), search_site),
+                MessageHandler(filters.Regex('^Change Device$'), change_device),
                 MessageHandler(filters.Regex('^Help$'), help_command),
             ],
-            GPON_SEARCH: [
+            Search_Site: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_gpon_search),
-                CommandHandler('cancel', cancel),
+                CommandHandler('Back', Back),
             ],
-            BCCS_OPERATION: [
+            Change_Device: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_bccs_operation),
-                CommandHandler('cancel', cancel),
+                CommandHandler('Back', Back),
             ],
         },
-        fallbacks=[CommandHandler('cancel', cancel)],
+        fallbacks=[CommandHandler('Back', Back)],
     )
 
     application.add_handler(conv_handler)
