@@ -21,7 +21,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ===== Configuration =====
-BOT_TOKEN = '7642040755:AAGIQCjgd6lgg68cb13j-AHHoVcRuW90yoU'  # Replace with your actual token
+BOT_TOKEN = '7693376139:AAHXmgQsBXp53TwHbsPHekYoq76tJc2OVy4'  # Replace with your actual token
 GITHUB_EXCEL_URL = "https://github.com/khamvandeth/GPON/raw/main/GPON.xlsx"
 BCCS_API_URL = "http://36.37.242.67:8068/BCCSGatewayWS/BCCSGatewayWS?wsdl"
 
